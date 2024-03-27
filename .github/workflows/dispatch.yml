@@ -31,7 +31,7 @@ jobs:
 
   Trigger_Hi:
     needs: [Pull_Request, Push]
-    if: !cancelled()
+    if: (!cancelled())
     uses: gabor-kovac/workflow/.github/workflows/say_hi.yml@main
     with:
       name: ${{ github.repository_owner }}
