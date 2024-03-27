@@ -1,0 +1,17 @@
+name: Test Workflow
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: false
+    inputs:
+      name:
+        required: false
+        type: string
+
+jobs:
+  Say_Hi:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo Hi ${{ inputs.name }} from reusable workflow
