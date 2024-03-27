@@ -1,0 +1,28 @@
+name: Dispatch workflow
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: false
+
+jobs:
+  Event_Print:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print event details
+        run: echo ${{ toJSON(github) }}
+        
+  Pull_Request:
+    needs: [Event_Print]
+    if: (github.event_name == 'pull_request')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Triggered by pull request"
+
+  Push:
+    needs: [Event_Print]
+    if: (github.event_name == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Triggered by push"
