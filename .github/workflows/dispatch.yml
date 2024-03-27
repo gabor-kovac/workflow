@@ -31,7 +31,7 @@ jobs:
 
   Trigger_Hi:
     needs: [Pull_Request, Push]
-    uses: gabor-kovac/workflows/.github/workflows/say_hi.yml@main
+    uses: gabor-kovac/workflow/.github/workflows/say_hi.yml@main
     with:
       name: ${{ github.repository_owner }}
 
