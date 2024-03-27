@@ -14,4 +14,8 @@ jobs:
   Say_Hi:
     runs-on: ubuntu-latest
     steps:
-      - run: echo Hi ${{ inputs.name }} from reusable workflow
+      - run: echo "Hi unknown from reusable workflow!"
+        if: ${{ inputs.name == '' }}
+
+      - run: echo "Hi ${{ inputs.name }} from reusable workflow!"
+        if: ${{ inputs.name != '' }}
