@@ -6,16 +6,21 @@ on:
       token:
         required: false
     inputs:
-      name:
-        required: false
+      override:
         type: string
+        required: false
+        default: 'false'
 
 jobs:
-  Say_Hi:
+  What_Was_Trigger:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Hi unknown from reusable workflow!"
-        if: ${{ inputs.name == '' }}
+      - run: echo "Trigger was ${{ github.event_name }}"
+        if: ${{ inputs.override != 'false' }}
+        env:
+          github.event_name: pull_request2
 
-      - run: echo "Hi ${{ inputs.name }} from reusable workflow!"
-        if: ${{ inputs.name != '' }}
+      - run: echo "Trigger was ${{ github.event_name }}"
+        if: ${{ inputs.override == 'false' }}
+
+      - run: echo "Trigger was ${{ github.event_name }}"
