@@ -12,10 +12,8 @@ jobs:
   What_Was_Trigger:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Trigger was ${{ github.event_name }}"
+      - run: export GITHUB_EVENT_NAME="push"
         if: ${{ inputs.override != 'false' }}
-        env:
-          GITHUB_EVENT_NAME: pull_request2
 
       - run: echo "Trigger was ${{ github.event_name }}"
         if: ${{ inputs.override == 'false' }}
