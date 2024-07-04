@@ -18,19 +18,21 @@ jobs:
         run: echo $JSON
         env:
           JSON: ${{ toJSON(github) }}
-        
-  Pull_Request:
-    needs: [Event_Print]
-    if: (github.event_name == 'pull_request')
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Triggered by pull request"
 
-  Push:
+  Feature_Branch:
     needs: [Event_Print]
     if: (github.event_name == 'push')
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Triggered by push"
+    uses: gabor-kovac/workflow/.github/workflows/feature_branch.yml@main
+    secrets: inherit
 
-  
+  Release_Candidate:
+    needs: [Event_Print]
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true)
+    uses: gabor-kovac/workflow/.github/workflows/release_candidate.yml@main
+    secrets: inherit
+    
+  Release:
+    needs: [Event_Print]
+    if: (github.event_name == 'pull_request' && github.base_ref == 'release' && github.head_ref == 'main' && github.event.pull_request.merged == true)
+    uses: gabor-kovac/workflow/.github/workflows/release.yml@main
+    secrets: inherit
