@@ -70,8 +70,11 @@ jobs:
         uses: tj-actions/branch-names@v8
             
       - name: Login to the GitHub Container regsitry
-        run: |
-          echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
  
       - name: Build docker image (C# projects)
         if: (github.event.repository.language == 'C#' && github.event_name == 'push')
