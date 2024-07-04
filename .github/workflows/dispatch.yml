@@ -2,6 +2,10 @@ name: Dispatch workflow
 
 on:
   workflow_call:
+    inputs:
+      trigger:
+        required: true
+        type: string
     secrets:
       token:
         required: false
@@ -28,12 +32,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Triggered by push"
-
-  Trigger_Hi:
-    needs: [Pull_Request, Push]
-    if: (!cancelled())
-    uses: gabor-kovac/workflow/.github/workflows/say_hi.yml@main
-    with:
-      name: ${{ github.repository_owner }}
 
   
