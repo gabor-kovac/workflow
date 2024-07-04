@@ -32,6 +32,122 @@ jobs:
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git commit -am "CI: bump package version to ${{ steps.package_version.version }}"
+          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.version }}"
           git push
-  
+
+  Create_Artifact:
+    needs: [Increase_Version_TypeScript]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository 
+        if: (github.event_name == 'push')
+        uses: actions/checkout@v4 
+      
+      - name: Checkout main branch
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main')
+        uses: actions/checkout@v4
+        with: 
+          ref: '${{github.base_ref}}'     
+ 
+      - name: Checkout main branch
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release')
+        uses: actions/checkout@v4
+        with: 
+          ref: '${{github.head_ref}}'
+      
+      - name: Pull all changes 
+        run: git pull
+        
+      - name: Lowercase the name of the repository 
+        id: LowercaseRepositoryName
+        uses: ASzc/change-string-case-action@v6
+        with:
+          string: ${{ github.event.repository.name }}
+      
+      - name: Get the name of the current branch
+        id: GetCurrentBranchName
+        uses: tj-actions/branch-names@v8
+            
+      - name: Login to the GitHub Container regsitry
+        run: |
+          echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+ 
+      - name: Build docker image (C# projects)
+        if: (github.event.repository.language == 'C#' && github.event_name == 'push')
+        working-directory: ./Source
+        run: |
+          docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+
+      - name: Build docker image (TypeScript projects) 
+        if: (github.event.repository.language == 'TypeScript' && github.event_name == 'push')
+        run: |
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+
+      - name: Build docker image (C# projects)
+        if: (github.event.repository.language == 'C#' && github.event_name == 'pull_request' )
+        working-directory: ./Source
+        run: |
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+
+      - name: Build docker image (TypeScript projects)
+        if: (github.event.repository.language == 'TypeScript' && github.event_name == 'pull_request' )
+        run: |
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+
+      # - name: Trigger workflow
+      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
+      #   run: |
+      #     curl -H "Authorization: token ${{ secrets.CR_PAT }}" \
+      #       -H "Accept: application/vnd.github.v3+json" \
+      #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/receive_release_candidate.yml/dispatches \
+      #       -d '{"ref": "main","inputs":{"message": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}"}}'
+            
+      # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
+      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
+      #   uses: benc-uk/workflow-dispatch@v1
+      #   with: 
+      #     workflow: increase_release_candidate.yml
+      #     repo: gabor-kovac/Application-Executable
+      #     ref: main
+      #     inputs: '{"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}"}'
+
+      # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
+      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'C#')
+      #   run: |
+      #     curl -H "Authorization: token ${{ secrets.CR_PAT }}" \
+      #       -H "Accept: application/vnd.github.v3+json" \
+      #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/increase_release_candidate.yml/dispatches \
+      #       -d '{"ref": "main", "inputs": {"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}"}}'
+          
+      - name: Create tag (C#)
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.repository.language == 'C#' || github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
+        id: CreateTagFromAssemblyVersion
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+            github_token: ${{ secrets.CR_PAT}}
+            custom_tag: ${{inputs.assemblyVersion}}
+            tag_prefix: " "
+      
+      - name: Create release (C#)
+        if: ( github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
+        uses: ncipollo/release-action@v1.14.0
+        with:
+            tag: ${{inputs.assemblyVersion}}
+            name: Release ${{inputs.assemblyVersion}}
+     
+      - name: Create tag (TypeScript)
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.repository.language == 'TypeScript' || github.event_name == 'pull_request' && github.base_ref == 'release'  && github.event.repository.language == 'TypeScript')
+        id: CreateTagFromPackageJsonVersion
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+            github_token: ${{ secrets.CR_PAT}}
+            custom_tag: ${{inputs.packageJsonVersion}}
+            tag_prefix: " "
+       
+      - name: Create release (TypeScript)
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'TypeScript')
+        uses: ncipollo/release-action@v1.14.0
+        with:
+            tag: ${{inputs.packageJsonVersion}}
+            name: Release ${{inputs.packageJsonVersion}}
