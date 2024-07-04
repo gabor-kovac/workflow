@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   Increase_Version_TypeScript:
-    if: (github.event.repository.language == 'TypeScript')
+    #if: (github.event.repository.language == 'TypeScript')
     runs-on: ubuntu-latest
     outputs:
       newVersion: ${{ steps.increase_package_version.outputs.next-version }}
