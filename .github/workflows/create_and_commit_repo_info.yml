@@ -98,7 +98,7 @@ jobs:
     - name: Run summary scripts save outputs to files
       timeout-minutes: 30
       env:
-        GH_TOKEN: ${{ secrets.CR_PAT }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir /tmp/data
         bash /tmp/aux_scripts/repo_info.sh > /tmp/data/${{ github.event.repository.name }}.json &&
