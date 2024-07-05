@@ -16,6 +16,9 @@ on:
     #   lastScannedBranch:
     #     type: string
     #     required: false
+
+permissions:
+  contents: write
         
 jobs: 
   Update_Status_Tracker:
