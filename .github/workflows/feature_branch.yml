@@ -85,7 +85,7 @@ jobs:
       - name: Build docker image (TypeScript projects) 
         if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'push')
         run: |
-          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
 
       - name: Build docker image (C# projects)
         if: (github.event.repository.language == 'C#' && github.event_name == 'pull_request' )
@@ -96,7 +96,7 @@ jobs:
       - name: Build docker image (TypeScript projects)
         if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'pull_request' )
         run: |
-          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
 
       # - name: Trigger workflow
       #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
@@ -104,7 +104,7 @@ jobs:
       #     curl -H "Authorization: token ${{ secrets.CR_PAT }}" \
       #       -H "Accept: application/vnd.github.v3+json" \
       #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/receive_release_candidate.yml/dispatches \
-      #       -d '{"ref": "main","inputs":{"message": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}"}}'
+      #       -d '{"ref": "main","inputs":{"message": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}"}}'
             
       # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
       #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
@@ -113,7 +113,7 @@ jobs:
       #     workflow: increase_release_candidate.yml
       #     repo: gabor-kovac/Application-Executable
       #     ref: main
-      #     inputs: '{"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.packageJsonVersion }}"}'
+      #     inputs: '{"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}"}'
 
       # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
       #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'C#')
@@ -128,16 +128,16 @@ jobs:
         id: CreateTagFromAssemblyVersion
         uses: mathieudutour/github-tag-action@v6.1
         with:
-            github_token: ${{ secrets.CR_PAT}}
-            custom_tag: ${{inputs.assemblyVersion}}
+            github_token: ${{ secrets.CR_PAT }}
+            custom_tag: ${{ inputs.assemblyVersion }}
             tag_prefix: " "
       
       - name: Create release (C#)
         if: ( github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
         uses: ncipollo/release-action@v1.14.0
         with:
-            tag: ${{inputs.assemblyVersion}}
-            name: Release ${{inputs.assemblyVersion}}
+            tag: ${{ inputs.assemblyVersion }}
+            name: Release ${{ inputs.assemblyVersion }}
      
       - name: Create tag (TypeScript)
         if: (github.event_name == 'pull_request' && github.base_ref == 'main' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') || github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
@@ -145,12 +145,12 @@ jobs:
         uses: mathieudutour/github-tag-action@v6.1
         with:
             github_token: ${{ secrets.CR_PAT}}
-            custom_tag: ${{inputs.packageJsonVersion}}
+            custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
             tag_prefix: " "
        
       - name: Create release (TypeScript)
         if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
         uses: ncipollo/release-action@v1.14.0
         with:
-            tag: ${{inputs.packageJsonVersion}}
-            name: Release ${{inputs.packageJsonVersion}}
+            tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+            name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
