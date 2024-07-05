@@ -17,7 +17,7 @@ jobs:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
     runs-on: ubuntu-latest
     outputs:
-      newVersion: ${{ steps.increase_package_version.outputs.next-version }}
+      newVersion: ${{ steps.package_version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
