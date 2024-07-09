@@ -17,17 +17,10 @@ on:
     #     type: string
     #     required: false
 
-permissions:
-  contents: write
-  pages: write
-        
 jobs: 
   Update_Status_Tracker:
     timeout-minutes: 15
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
     - name: Install python dependencies
       run: |
