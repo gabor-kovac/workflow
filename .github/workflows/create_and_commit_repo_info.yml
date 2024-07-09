@@ -19,11 +19,16 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
         
 jobs: 
   Update_Status_Tracker:
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
     - name: Install python dependencies
       run: |
@@ -121,20 +126,17 @@ jobs:
         cp ${{ env.REPO_TESTS_PATH }} src/assets/releases/${{ github.event.repository.name }}.json
     
     - name: Commit changes for repository file
-      env:
-        CR_PAT: ${{ secrets.CR_PAT }}
       run: |
         git config --local user.email "gabor.kovac@ametek.com"
         git config --local user.name "gabor-kovac"
         git add src/assets/repos/${{ github.event.repository.name }}.json
         git add src/assets/releases/${{ github.event.repository.name }}.json
         git commit -m "Update ${{ github.event.repository.name }} summary files"
-        git push https://CR_PAT@github.com/gabor-kovac/StatusTracker.git
         
-    # - name: Push changes to StatusTracker repository
-    #   uses: ad-m/github-push-action@master
-    #   with:
-    #     repository: gabor-kovac/StatusTracker
-    #     branch: main
-    #     github_token: ${{ secrets.CR_PAT }}
-    #     force: true
+    - name: Push changes to StatusTracker repository
+      uses: ad-m/github-push-action@master
+      with:
+        repository: gabor-kovac/StatusTracker
+        branch: main
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        force: true
