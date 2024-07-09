@@ -24,6 +24,8 @@ jobs:
   Update_Status_Tracker:
     timeout-minutes: 15
     runs-on: ubuntu-latest
+    permissions:
+      contents: write-all
     steps:
     - name: Install python dependencies
       run: |
