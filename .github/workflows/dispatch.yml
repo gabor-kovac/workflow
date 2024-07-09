@@ -9,7 +9,11 @@ on:
     secrets:
       token:
         required: false
-
+        
+permissions:
+  contents: write
+  pages: write
+  
 jobs:
   Event_Print:
     runs-on: ubuntu-latest
