@@ -127,11 +127,11 @@ jobs:
         git add src/assets/repos/${{ github.event.repository.name }}.json
         git add src/assets/releases/${{ github.event.repository.name }}.json
         git commit -m "Update ${{ github.event.repository.name }} summary files"
-                
-    - name: Push changes to StatusTracker repository
-      uses: ad-m/github-push-action@master
-      with:
-        repository: gabor-kovac/StatusTracker
-        branch: main
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        force: true
+        git push                 
+    # - name: Push changes to StatusTracker repository
+    #   uses: ad-m/github-push-action@master
+    #   with:
+    #     repository: gabor-kovac/StatusTracker
+    #     branch: main
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     force: true
