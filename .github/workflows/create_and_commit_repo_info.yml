@@ -122,8 +122,8 @@ jobs:
     
     - name: Commit changes for repository file
       run: |
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config --local user.email "gabor.kovac@ametek.com"
+        git config --local user.name "gabor-kovac"
         git add src/assets/repos/${{ github.event.repository.name }}.json
         git add src/assets/releases/${{ github.event.repository.name }}.json
         git commit -m "Update ${{ github.event.repository.name }} summary files"
