@@ -16,6 +16,8 @@ on:
     #   lastScannedBranch:
     #     type: string
     #     required: false
+permissions:
+  contents: write
 
 jobs: 
   Update_Status_Tracker:
@@ -130,5 +132,4 @@ jobs:
       with:
         repository: gabor-kovac/StatusTracker
         branch: main
-        github_token: ${{ secrets.GITHUB_TOKEN }}
         force: true
