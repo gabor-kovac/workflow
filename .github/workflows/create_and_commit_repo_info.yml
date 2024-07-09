@@ -7,8 +7,8 @@ name: Update status tracker repository with current repository info
 on:
   workflow_call:
     secrets:
-      token:
-        required: false
+      CR_PAT:
+        required: true
     # inputs:
     #   scanResult:
     #     type: string
@@ -16,8 +16,6 @@ on:
     #   lastScannedBranch:
     #     type: string
     #     required: false
-permissions:
-  contents: write
 
 jobs: 
   Update_Status_Tracker:
@@ -132,4 +130,5 @@ jobs:
       with:
         repository: gabor-kovac/StatusTracker
         branch: main
+        token: ${{ secrets.CR_PAT }}
         force: true
