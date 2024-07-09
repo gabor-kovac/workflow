@@ -130,5 +130,5 @@ jobs:
       with:
         repository: gabor-kovac/StatusTracker
         branch: main
-        token: ${{ secrets.CR_PAT }}
+        github_token: ${{ secrets.CR_PAT }}
         force: true
