@@ -9,10 +9,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
-permissions:
-  contents: write
-  packages: write
-
 jobs:
   Increase_Version_TypeScript:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
