@@ -20,7 +20,6 @@ on:
 permissions:
   contents: write
   pages: write
-  id-token: write
         
 jobs: 
   Update_Status_Tracker:
