@@ -27,7 +27,7 @@ jobs:
 
   Update_Status_Tracker:
     needs: [Event_Print]
-    if: (github.event_name == 'gollum')
+    if: (github.event_name == 'gollum' || github.event_name == 'delete')
     uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
     secrets: inherit
 
