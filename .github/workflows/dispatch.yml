@@ -21,7 +21,7 @@ jobs:
 
   Feature_Branch:
     needs: [Event_Print]
-    if: (github.event_name == 'push')
+    #if: (github.event_name == 'push')
     uses: gabor-kovac/workflow/.github/workflows/feature_branch.yml@main
     secrets: inherit
 
