@@ -111,7 +111,7 @@ jobs:
       with:
         repository: 'gabor-kovac/StatusTracker'
         ref: 'main'
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.CR_PAT }}
 
     - name: Update repository summary files
       run: |
@@ -129,7 +129,6 @@ jobs:
     - name: Push changes to StatusTracker repository
       uses: ad-m/github-push-action@master
       with:
-        repository: gabor-kovac/StatusTracker
-        branch: main
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        repository: 'gabor-kovac/StatusTracker'
+        branch: 'main'
         force: true
