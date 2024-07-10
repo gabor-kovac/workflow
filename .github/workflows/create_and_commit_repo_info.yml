@@ -111,7 +111,7 @@ jobs:
       with:
         repository: 'gabor-kovac/StatusTracker'
         ref: 'main'
-        token: ${{ secrets.CR_PAT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Update repository summary files
       run: |
