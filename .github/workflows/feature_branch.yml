@@ -106,7 +106,7 @@ jobs:
       # - name: Trigger workflow
       #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
       #   run: |
-      #     curl -H "Authorization: token ${{ secrets.CR_PAT }}" \
+      #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
       #       -H "Accept: application/vnd.github.v3+json" \
       #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/receive_release_candidate.yml/dispatches \
       #       -d '{"ref": "main","inputs":{"message": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}"}}'
@@ -123,7 +123,7 @@ jobs:
       # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
       #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'C#')
       #   run: |
-      #     curl -H "Authorization: token ${{ secrets.CR_PAT }}" \
+      #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
       #       -H "Accept: application/vnd.github.v3+json" \
       #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/increase_release_candidate.yml/dispatches \
       #       -d '{"ref": "main", "inputs": {"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}"}}'
@@ -133,7 +133,7 @@ jobs:
         id: CreateTagFromAssemblyVersion
         uses: mathieudutour/github-tag-action@v6.1
         with:
-            github_token: ${{ secrets.CR_PAT }}
+            github_token: ${{ secrets.GITHUB_TOKEN }}
             custom_tag: ${{ inputs.assemblyVersion }}
             tag_prefix: " "
       
@@ -149,7 +149,7 @@ jobs:
         id: CreateTagFromPackageJsonVersion
         uses: mathieudutour/github-tag-action@v6.1
         with:
-            github_token: ${{ secrets.CR_PAT}}
+            github_token: ${{ secrets.GITHUB_TOKEN}}
             custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
             tag_prefix: " "
        
