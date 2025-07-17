@@ -160,3 +160,22 @@ jobs:
         with:
             tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
             name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+
+      - name: Generate SBOM for release (C#)
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
+        uses: anchore/sbom-action@v0.20.2
+        with:
+          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-release-assets: true
+
+      - name: Generate SBOM for release (TypeScript)
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
+        uses: anchore/sbom-action@v0.20.2
+        with:
+          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-release-assets: true
+      
