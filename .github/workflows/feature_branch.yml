@@ -18,22 +18,22 @@ jobs:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
     runs-on: ubuntu-latest
     outputs:
-      newVersion: ${{ steps.package_version.outputs.version }}
+      newVersion: ${{ steps.package_version.outputs.new-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Bump patch version
         id: package_version
-        uses: KageKirin/bump-node-package-version@v1
+        uses: gedclack/simple-bump-package-json@v1.0.0
         with:
-          patch: true
+          bump-mode: patch
           
       - name: Commit new version
         run: |
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.version }}"
+          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.new-version }}"
           git push
 
   # Update_Status_Tracker:
@@ -47,20 +47,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout repository 
-        if: (github.event_name == 'push')
         uses: actions/checkout@v4 
-      
-      - name: Checkout main branch
-        if: (github.event_name == 'pull_request' && github.base_ref == 'main')
-        uses: actions/checkout@v4
-        with: 
-          ref: '${{github.base_ref}}'     
- 
-      - name: Checkout main branch
-        if: (github.event_name == 'pull_request' && github.base_ref == 'release')
-        uses: actions/checkout@v4
-        with: 
-          ref: '${{github.head_ref}}'
       
       - name: Pull all changes 
         run: git pull
@@ -83,99 +70,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
  
       - name: Build docker image (C# projects)
-        if: (github.event.repository.language == 'C#' && github.event_name == 'push')
+        if: (github.event.repository.language == 'C#')
         working-directory: ./Source
         run: |
           docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
 
       - name: Build docker image (TypeScript projects) 
-        if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'push')
+        if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
         run: |
           docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
-
-      - name: Build docker image (C# projects)
-        if: (github.event.repository.language == 'C#' && github.event_name == 'pull_request' )
-        working-directory: ./Source
-        run: |
-          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
-
-      - name: Build docker image (TypeScript projects)
-        if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'pull_request' )
-        run: |
-          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
-
-      # - name: Trigger workflow
-      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
-      #   run: |
-      #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       -H "Accept: application/vnd.github.v3+json" \
-      #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/receive_release_candidate.yml/dispatches \
-      #       -d '{"ref": "main","inputs":{"message": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}"}}'
-            
-      # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
-      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'TypeScript')
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with: 
-      #     workflow: increase_release_candidate.yml
-      #     repo: gabor-kovac/Application-Executable
-      #     ref: main
-      #     inputs: '{"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}"}'
-
-      # - name: Trigger workflow responsible for updating the docker compose file Docker_Compose_Release.yml
-      #   if: (github.event_name == 'pull_request' && github.event.repository.language == 'C#')
-      #   run: |
-      #     curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-      #       -H "Accept: application/vnd.github.v3+json" \
-      #       https://api.github.com/repos/gabor-kovac/Application-Executable/actions/workflows/increase_release_candidate.yml/dispatches \
-      #       -d '{"ref": "main", "inputs": {"image": "ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}"}}'
-          
-      - name: Create tag (C#)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.repository.language == 'C#' || github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
-        id: CreateTagFromAssemblyVersion
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            custom_tag: ${{ inputs.assemblyVersion }}
-            tag_prefix: " "
-      
-      - name: Create release (C#)
-        if: ( github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
-        uses: ncipollo/release-action@v1.14.0
-        with:
-            tag: ${{ inputs.assemblyVersion }}
-            name: Release ${{ inputs.assemblyVersion }}
-     
-      - name: Create tag (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') || github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
-        id: CreateTagFromPackageJsonVersion
-        uses: mathieudutour/github-tag-action@v6.1
-        with:
-            github_token: ${{ secrets.GITHUB_TOKEN}}
-            custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-            tag_prefix: " "
-       
-      - name: Create release (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
-        uses: ncipollo/release-action@v1.14.0
-        with:
-            tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-            name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-
-      - name: Generate SBOM for release (C#)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && github.event.repository.language == 'C#')
-        uses: anchore/sbom-action@v0.20.2
-        with:
-          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ inputs.assemblyVersion }}
-          format: spdx-json
-          output-file: sbom.spdx.json
-          upload-release-assets: true
-
-      - name: Generate SBOM for release (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
-        uses: anchore/sbom-action@v0.20.2
-        with:
-          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-          format: spdx-json
-          output-file: sbom.spdx.json
-          upload-release-assets: true
-      
