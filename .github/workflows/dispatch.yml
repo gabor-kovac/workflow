@@ -21,7 +21,7 @@ jobs:
 
   Feature_Branch:
     needs: [Event_Print]
-    if: (github.event_name == 'push' || github.event_name == 'pull_request')
+    if: (github.event_name == 'push')
     uses: gabor-kovac/workflow/.github/workflows/feature_branch.yml@main
     secrets: inherit
 
@@ -31,11 +31,11 @@ jobs:
   #   uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
   #   secrets: inherit
 
-  # Release_Candidate:
-  #   needs: [Event_Print]
-  #   if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true)
-  #   uses: gabor-kovac/workflow/.github/workflows/release_candidate.yml@main
-  #   secrets: inherit
+  Release_Candidate:
+    needs: [Event_Print]
+    if: (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true)
+    uses: gabor-kovac/workflow/.github/workflows/release_candidate.yml@main
+    secrets: inherit
     
   # Release:
   #   needs: [Event_Print]
