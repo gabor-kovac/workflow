@@ -18,25 +18,23 @@ jobs:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
     runs-on: ubuntu-latest
     outputs:
-      newVersion: ${{ steps.package_version.outputs.version }}
+      newVersion: ${{ steps.package_version.outputs.new-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Bump patch version
         id: package_version
-        uses: KageKirin/bump-node-package-version@v1
+        uses: gedclack/simple-bump-package-json@v1.0.0
         with:
-          minor: false
-          patch: false
-          major: true
+          bump-mode: major
           
       - name: Commit new version
         run: |
           git pull
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.version }}"
+          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.new-version }}"
           git push -u
 
   Create_Artifact:
@@ -83,6 +81,13 @@ jobs:
             github_token: ${{ secrets.GITHUB_TOKEN }}
             custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
             tag_prefix: " "
+
+      - name: Create a GitHub release
+        if: ( github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') )
+        uses: ncipollo/release-action@v1.14.0
+        with:
+          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
 
       - name: Generate SBOM for release (TypeScript)
         if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
