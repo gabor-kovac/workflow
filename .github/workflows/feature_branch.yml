@@ -36,10 +36,10 @@ jobs:
           git commit -am "CI: bump package version to ${{ steps.package_version.outputs.version }}"
           git push
 
-  Update_Status_Tracker:
-    needs: [Increase_Version_TypeScript]
-    uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
-    secrets: inherit
+  # Update_Status_Tracker:
+  #   needs: [Increase_Version_TypeScript]
+  #   uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
+  #   secrets: inherit
 
   Create_Artifact:
     needs: [Increase_Version_TypeScript]
