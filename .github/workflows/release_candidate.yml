@@ -28,6 +28,8 @@ jobs:
         uses: KageKirin/bump-node-package-version@v1
         with:
           minor: true
+          patch: false
+          major: false
           
       - name: Commit new version
         run: |
