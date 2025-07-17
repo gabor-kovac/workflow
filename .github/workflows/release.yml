@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Bump patch version
+      - name: Bump major version
         id: package_version
         uses: gedclack/simple-bump-package-json@v1.0.0
         with:
@@ -96,4 +96,11 @@ jobs:
           image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
           format: spdx-json
           output-file: sbom.spdx.json
-          upload-release-assets: true
+
+      - name: Upload SBOM to Release
+        uses: svenstaro/upload-release-action@2.7.0
+        with:
+          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          file: sbom.spdx.json
+          asset_name: sbom.spdx.json
+
