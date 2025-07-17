@@ -50,6 +50,10 @@ jobs:
       
       - name: Pull all changes 
         run: git pull
+
+      - name: Save head sha
+        id: headSha
+        run: echo "HEAD_SHA=$(git log -1 --format=%H)" >> $GITHUB_OUTPUT
         
       - name: Lowercase the name of the repository 
         id: LowercaseRepositoryName
@@ -81,3 +85,4 @@ jobs:
             github_token: ${{ secrets.GITHUB_TOKEN }}
             custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
             tag_prefix: " "
+            commit_sha: ${{ steps.headSha.outputs.HEAD_SHA }}
