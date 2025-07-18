@@ -98,7 +98,7 @@ jobs:
         if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib') == false)
         working-directory: ./Source
         run: |
-          docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" --build-arg NUGET_TOKEN=${{ secrets.GITHUB_TOKEN }} .
+          docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" . --build-arg NUGET_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docker image (TypeScript projects) 
         if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
