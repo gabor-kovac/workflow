@@ -115,7 +115,7 @@ jobs:
           dotnet restore
           dotnet build --configuration Release
           dotnet pack --configuration Release -o ./nupkg /p:PackageVersion=${{ needs.Increase_Version_CSharp.outputs.newVersion }}
-          dotnet nuget push ./nupkg/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
+          dotnet nuget push ./nupkg/*.nupkg --source ${{ env.NUGET_SOURCE }} --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
