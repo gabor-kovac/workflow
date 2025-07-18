@@ -63,6 +63,7 @@ jobs:
 
   Create_Artifact:
     needs: [Increase_Version_TypeScript, Increase_Version_CSharp]
+    if: ((always() && needs.Increase_Version_TypeScript.result == 'success') || (always() && needs.Increase_Version_CSharp.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
