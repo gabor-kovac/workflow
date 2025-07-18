@@ -121,7 +121,7 @@ jobs:
         if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib') == false)
         working-directory: ./Source
         run: |
-          docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+          docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" --build-arg NUGET_TOKEN=${{ secrets.GITHUB_TOKEN }} .
 
       - name: Build and publish NuGet package (C# Lib projects)
         if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib'))
