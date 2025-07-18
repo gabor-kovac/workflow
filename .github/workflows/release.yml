@@ -18,13 +18,28 @@ jobs:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
     runs-on: ubuntu-latest
     outputs:
-      newVersion: ${{ steps.package_version.outputs.new-version }}
+      newVersion: ${{ steps.package_version.outputs.new-version1 || steps.package_version.outputs.new-version2 || steps.package_version.outputs.new-version3  }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Bump patch version
+        if: (github.event_name == 'push')
+        id: package_version1
+        uses: gedclack/simple-bump-package-json@v1.0.0
+        with:
+          bump-mode: patch
+
+      - name: Bump minor version
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main')
+        id: package_version2
+        uses: gedclack/simple-bump-package-json@v1.0.0
+        with:
+          bump-mode: minor
+
       - name: Bump major version
-        id: package_version
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release')
+        id: package_version3
         uses: gedclack/simple-bump-package-json@v1.0.0
         with:
           bump-mode: major
@@ -34,11 +49,35 @@ jobs:
           git pull
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.new-version }}"
+          git commit -am "CI: bump package version to ${{ steps.package_version.outputs.new-version1 || steps.package_version.outputs.new-version2 || steps.package_version.outputs.new-version3 }}"
           git push -u
 
+  Increase_Version_CSharp:
+    if: github.event.repository.language == 'C#'
+    runs-on: ubuntu-latest
+    outputs:
+      newVersion: ${{ steps.set_version.outputs.newVersion }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bump patch version
+        id: set_version
+        uses: vers-one/dotnet-project-version-updater@v1.7
+        with:
+          files: "Source/**/*.csproj"
+          version: bump-major
+
+      - name: Commit new version
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -am "CI: bump C# version to ${{ steps.set_version.outputs.newVersion }}"
+          git push
+
   Create_Artifact:
-    needs: [Increase_Version_TypeScript]
+    needs: [Increase_Version_TypeScript, Increase_Version_CSharp]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -77,35 +116,66 @@ jobs:
         run: |
           docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
 
-      - name: Create tag (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') || github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
-        id: CreateTagFromPackageJsonVersion
+      - name: Build docker image (C# projects)
+        if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib') == false)
+        working-directory: ./Source
+        run: |
+          docker build --push --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }} --file ./Dockerfile --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
+
+      - name: Build and publish NuGet package (C# Lib projects)
+        if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib'))
+        working-directory: ./Source
+        run: |
+          dotnet restore
+          dotnet build --configuration Release
+          dotnet pack --configuration Release -o ./nupkg /p:PackageVersion=${{ needs.Increase_Version_CSharp.outputs.newVersion }}
+          dotnet nuget push ./nupkg/*.nupkg --source "github" --api-key ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      # Create tag
+
+      - name: Create tag
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release')
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion  }}
           tag_prefix: " "
           commit_sha: ${{ steps.headSha.outputs.HEAD_SHA }}
 
-      - name: Create a GitHub release
-        if: ( github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') )
+      # Create release 
+
+      - name: Create release
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release')
         uses: ncipollo/release-action@v1.14.0
         with:
-          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-          name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion }}
+          name: Release ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion }}
 
-      - name: Generate SBOM for release (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
+      # Generate SBOM
+
+      - name: Generate SBOM for app release
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && contains(github.repository, 'Lib') == false)
         uses: anchore/sbom-action@v0.20.2
         with:
-          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          image: ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion  }}
           format: spdx-json
           output-file: sbom.spdx.json
 
-      - name: Upload SBOM to Release
+      - name: Generate SBOM for library release
+        if: (github.event_name == 'pull_request' && github.base_ref == 'release' && contains(github.repository, 'Lib'))
+        uses: anchore/sbom-action@v0.20.2
+        with:
+          path: Source/
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM to Release 
         uses: svenstaro/upload-release-action@2.7.0
         with:
-          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
+          tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion }}
           file: sbom.spdx.json
           asset_name: sbom.spdx.json
 
