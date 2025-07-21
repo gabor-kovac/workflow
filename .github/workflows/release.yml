@@ -51,6 +51,10 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git commit -am "CI: bump package version to ${{ steps.package_version.outputs.new-version1 || steps.package_version.outputs.new-version2 || steps.package_version.outputs.new-version3 }}"
           git push -u
+          git fetch origin main
+          git checkout main
+          git merge ${{ github.ref_name }}
+          git push origin main
 
   Increase_Version_CSharp:
     if: github.event.repository.language == 'C#'
@@ -61,7 +65,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Bump patch version
+      - name: Bump major version
         id: set_version
         uses: vers-one/dotnet-project-version-updater@v1.7
         with:
@@ -75,6 +79,10 @@ jobs:
           git add .
           git commit -am "CI: bump C# version to ${{ steps.set_version.outputs.newVersion }}"
           git push
+          git fetch origin main
+          git checkout main
+          git merge ${{ github.ref_name }}
+          git push origin main
 
   Create_Artifact:
     needs: [Increase_Version_TypeScript, Increase_Version_CSharp]
