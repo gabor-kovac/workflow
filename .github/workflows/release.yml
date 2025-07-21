@@ -53,7 +53,7 @@ jobs:
           git push -u
           git fetch origin main
           git checkout main
-          git merge ${{ github.ref_name }}
+          git merge ${{ github.ref_name }} --allow-unrelated-histories
           git push origin main
 
   Increase_Version_CSharp:
@@ -81,7 +81,7 @@ jobs:
           git push
           git fetch origin main
           git checkout main
-          git merge ${{ github.ref_name }}
+          git merge ${{ github.ref_name }} --allow-unrelated-histories
           git push origin main
 
   Create_Artifact:
