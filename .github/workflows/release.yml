@@ -66,7 +66,7 @@ jobs:
         uses: vers-one/dotnet-project-version-updater@v1.7
         with:
           files: "Source/**/*.csproj"
-          version: bump-major
+          version: '^.0.0'
 
       - name: Commit new version
         run: |

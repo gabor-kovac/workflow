@@ -51,7 +51,7 @@ jobs:
         uses: vers-one/dotnet-project-version-updater@v1.7
         with:
           files: "Source/**/*.csproj"
-          version: bump-minor
+          version: '*.^.0'
 
       - name: Commit new version
         run: |
@@ -98,7 +98,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build docker image (TypeScript projects)
-        if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'pull_request' )
+        if: ((github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') && github.event_name == 'pull_request')
         run: |
           docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_TypeScript.outputs.newVersion }} --file ./Dockerfile --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" .
 
@@ -119,12 +119,13 @@ jobs:
           NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
-      - name: Create tag (TypeScript)
-        if: (github.event_name == 'pull_request' && github.base_ref == 'main' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile') || github.event_name == 'pull_request' && github.base_ref == 'release' && (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile'))
-        id: CreateTagFromPackageJsonVersion
+      # Create tag
+
+      - name: Create tag
+        if: (github.event_name == 'pull_request' && github.base_ref == 'main')
         uses: mathieudutour/github-tag-action@v6.1
         with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-            custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion }}
-            tag_prefix: " "
-            commit_sha: ${{ steps.headSha.outputs.HEAD_SHA }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion  }}
+          tag_prefix: " "
+          commit_sha: ${{ steps.headSha.outputs.HEAD_SHA }}
