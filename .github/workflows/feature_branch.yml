@@ -96,7 +96,6 @@ jobs:
  
       - name: Build docker image (C# projects)
         if: (github.event.repository.language == 'C#' && contains(github.repository, 'Lib') == false)
-        working-directory: ./Source
         run: |
           docker build --platform linux/amd64 --tag ghcr.io/gabor-kovac/${{ steps.LowercaseRepositoryName.outputs.lowercase }}:${{ needs.Increase_Version_CSharp.outputs.newVersion }}-${{ steps.GetCurrentBranchName.outputs.current_branch }} --output=type=registry --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" --build-arg NUGET_TOKEN=${{ secrets.GITHUB_TOKEN }} .
 
