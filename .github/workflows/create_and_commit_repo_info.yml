@@ -20,7 +20,7 @@ on:
 jobs: 
   Update_Status_Tracker:
     timeout-minutes: 15
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - name: Install python dependencies
       run: |
@@ -29,7 +29,7 @@ jobs:
         
     - name: Check release branch exists
       id: check-branch-exists
-      uses: GuillaumeFalourd/branch-exists@v1
+      uses: GuillaumeFalourd/branch-exists@v1.2
       with:
         branch: release
 
@@ -51,7 +51,7 @@ jobs:
     
     - name: Checkout repository wiki
       if: env.WIKI_EXISTS == 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7.0.1
       with:
         repository: ${{ github.repository }}.wiki
         path: wiki_temp_dir
@@ -72,7 +72,7 @@ jobs:
         echo $LAST_SCANNED_BRANCH
     
     - name: Checkout Workflow-Process repository to get summary scripts
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7.0.1
       with:
         repository: 'gabor-kovac/workflow'
 
@@ -84,14 +84,14 @@ jobs:
 
     - name: Checkout local repository release branch
       if: steps.check-branch-exists.outputs.exists == 'true'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7.0.1
       with:
         ref: 'release'
 
     # This will skip RC list and version
     - name: Checkout local repository main branch
       if: steps.check-branch-exists.outputs.exists == 'false'
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7.0.1
       with:
         ref: 'main'     
  
@@ -107,7 +107,7 @@ jobs:
         echo "REPO_TESTS_PATH=/tmp/data/${{ github.event.repository.name }}-tests.json" >> $GITHUB_ENV
         
     - name: Checkout StatusTracker repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7.0.1
       with:
         repository: 'gabor-kovac/StatusTracker'
         ref: 'main'
@@ -127,7 +127,7 @@ jobs:
         git commit -m "Update ${{ github.event.repository.name }} summary files"
         
     - name: Push changes to StatusTracker repository
-      uses: ad-m/github-push-action@master
+      uses: ad-m/github-push-action@v1.3.0
       with:
         repository: 'gabor-kovac/StatusTracker'
         branch: 'main'

@@ -12,7 +12,7 @@ on:
   
 jobs:
   Event_Print:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Print event details
         run: echo $JSON

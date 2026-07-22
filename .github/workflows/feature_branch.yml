@@ -16,12 +16,12 @@ permissions:
 jobs:
   Increase_Version_TypeScript:
     if: (github.event.repository.language == 'TypeScript' || github.event.repository.language == 'Dockerfile')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       newVersion: ${{ steps.package_version.outputs.new-version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Bump patch version
         id: package_version
@@ -38,16 +38,16 @@ jobs:
 
   Increase_Version_CSharp:
     if: github.event.repository.language == 'C#'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       newVersion: ${{ steps.set_version.outputs.newVersion }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Bump patch version
         id: set_version
-        uses: vers-one/dotnet-project-version-updater@v1.7
+        uses: vers-one/dotnet-project-version-updater@v1.8
         with:
           files: "Source/**/*.csproj"
           version: '*.*.^'
@@ -68,27 +68,27 @@ jobs:
   Create_Artifact:
     needs: [Increase_Version_TypeScript, Increase_Version_CSharp]
     if: ((always() && needs.Increase_Version_TypeScript.result == 'success') || (always() && needs.Increase_Version_CSharp.result == 'success'))
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout repository 
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v7.0.1 
       
       - name: Pull all changes 
         run: git pull
         
       - name: Lowercase the name of the repository 
         id: LowercaseRepositoryName
-        uses: ASzc/change-string-case-action@v6
+        uses: ASzc/change-string-case-action@v8
         with:
           string: ${{ github.event.repository.name }}
       
       - name: Get the name of the current branch
         id: GetCurrentBranchName
-        uses: tj-actions/branch-names@v8
+        uses: tj-actions/branch-names@v9.0.2
             
       - name: Login to the GitHub Container regsitry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4.4.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
