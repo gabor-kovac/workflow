@@ -115,15 +115,15 @@ jobs:
 
     - name: Update repository summary files
       run: |
-        cp ${{ env.REPO_INFO_PATH }} src/assets/repos/${{ github.event.repository.name }}.json &&
-        cp ${{ env.REPO_TESTS_PATH }} src/assets/releases/${{ github.event.repository.name }}.json
+        cp ${{ env.REPO_INFO_PATH }} src/Assets/Repos/${{ github.event.repository.name }}.json &&
+        cp ${{ env.REPO_TESTS_PATH }} src/Assets/Releases/${{ github.event.repository.name }}.json
     
     - name: Commit changes for repository file
       run: |
         git config --local user.email "gabor.kovac@ametek.com"
         git config --local user.name "gabor-kovac"
-        git add src/assets/repos/${{ github.event.repository.name }}.json
-        git add src/assets/releases/${{ github.event.repository.name }}.json
+        git add src/Assets/Repos/${{ github.event.repository.name }}.json
+        git add src/Assets/Releases/${{ github.event.repository.name }}.json
         git commit -m "Update ${{ github.event.repository.name }} summary files"
         
     - name: Push changes to StatusTracker repository
