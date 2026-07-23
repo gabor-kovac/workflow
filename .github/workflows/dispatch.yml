@@ -14,6 +14,9 @@ jobs:
   Event_Print:
     runs-on: ubuntu-24.04
     steps:
+      - name: Print triggering event
+        run: echo "Trigger was ${{ github.event_name }}"
+        
       - name: Print event details
         run: echo $JSON
         env:
