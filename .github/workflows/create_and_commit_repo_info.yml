@@ -9,13 +9,6 @@ on:
     secrets:
       CR_PAT:
         required: true
-    # inputs:
-    #   scanResult:
-    #     type: string
-    #     required: false
-    #   lastScannedBranch:
-    #     type: string
-    #     required: false
 
 jobs: 
   Update_Status_Tracker:
@@ -26,12 +19,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         sudo pip install yq
-        
-    - name: Check release branch exists
-      id: check-branch-exists
-      uses: GuillaumeFalourd/branch-exists@v1.2
-      with:
-        branch: release
 
     - name: Check for wiki
       id: check_wiki
@@ -59,19 +46,9 @@ jobs:
     - name: Get and store wiki version
       if: env.WIKI_EXISTS == 'true'
       run: |
-        echo "WIKI_VERSION=$(head -n 1 wiki_temp_dir/Home.md | grep -oP '(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?')" >> $GITHUB_ENV
-
-    - name: Save input to env
-      run: |
-        echo "LAST_SCAN_RESULT=${{ inputs.scanResult }}" >> $GITHUB_ENV
-        echo "LAST_SCANNED_BRANCH=${{ inputs.lastScannedBranch }}" >> $GITHUB_ENV
-
-    - name: Echo scan result, last scanned branch
-      run: |
-        echo $LAST_SCAN_RESULT
-        echo $LAST_SCANNED_BRANCH
+        echo "WIKI_VERSION=$(head -n 1 wiki_temp_dir/Home.md | grep -oP '(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)')" >> $GITHUB_ENV
     
-    - name: Checkout Workflow-Process repository to get summary scripts
+    - name: Checkout Workflow repository to get summary scripts
       uses: actions/checkout@v7.0.1
       with:
         repository: 'gabor-kovac/workflow'
@@ -82,49 +59,39 @@ jobs:
         mv .github/workflows/status-tracker/* /tmp/aux_scripts/
         chmod +x /tmp/aux_scripts/*
 
-    - name: Checkout local repository release branch
-      if: steps.check-branch-exists.outputs.exists == 'true'
-      uses: actions/checkout@v7.0.1
-      with:
-        ref: 'release'
-
     # This will skip RC list and version
-    - name: Checkout local repository main branch
+    - name: Checkout main branch
       if: steps.check-branch-exists.outputs.exists == 'false'
       uses: actions/checkout@v7.0.1
       with:
-        ref: 'main'     
+        ref: 'main'
  
-    - name: Run summary scripts save outputs to files
+    - name: Run summary script and save output to file
       timeout-minutes: 30
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mkdir /tmp/data
         bash /tmp/aux_scripts/repo_info.sh > /tmp/data/${{ github.event.repository.name }}.json &&
-        echo "REPO_INFO_PATH=/tmp/data/${{ github.event.repository.name }}.json" >> $GITHUB_ENV &&
-        bash /tmp/aux_scripts/tests_info.sh > /tmp/data/${{ github.event.repository.name }}-tests.json &&
-        echo "REPO_TESTS_PATH=/tmp/data/${{ github.event.repository.name }}-tests.json" >> $GITHUB_ENV
+        echo "REPO_INFO_PATH=/tmp/data/${{ github.event.repository.name }}.json" >> $GITHUB_ENV
         
-    - name: Checkout StatusTracker repository
+    - name: Checkout StatusTracker
       uses: actions/checkout@v7.0.1
       with:
         repository: 'gabor-kovac/StatusTracker'
         ref: 'main'
         token: ${{ secrets.CR_PAT }}
 
-    - name: Update repository summary files
+    - name: Update StatusTracker with summary file
       run: |
-        cp ${{ env.REPO_INFO_PATH }} src/Assets/Repos/${{ github.event.repository.name }}.json &&
-        cp ${{ env.REPO_TESTS_PATH }} src/Assets/Releases/${{ github.event.repository.name }}.json
+        cp ${{ env.REPO_INFO_PATH }} src/Assets/Repos/${{ github.event.repository.name }}.json
     
-    - name: Commit changes for repository file
+    - name: Commit changes
       run: |
         git config --local user.email "gabor.kovac@ametek.com"
         git config --local user.name "gabor-kovac"
         git add src/Assets/Repos/${{ github.event.repository.name }}.json
-        git add src/Assets/Releases/${{ github.event.repository.name }}.json
-        git commit -m "Update ${{ github.event.repository.name }} summary files"
+        git commit -m "Update ${{ github.event.repository.name }} summary file"
         
     - name: Push changes to StatusTracker repository
       uses: ad-m/github-push-action@v1.3.0

@@ -1,24 +1,22 @@
 #!/bin/bash
-# Makes a json object about the repository
-
-# Search for files with these names in the project directory
-SEARCH=( "package.json", "*.csproj" )
+# Make a json object about the repository
 
 # Fetch all remotes and all tags, silenced output
 git fetch --all --tags > /dev/null 2>&1
 
-# Get name from git remote url
-NAME=$(basename -s .git $(git config --get remote.origin.url))
-
 # Get owner/repo string
 OWNER_REPO=$(git config --get remote.origin.url | grep -oP '(?<=github\.com\/).*' | sed 's/\.git$//')
+
+# Repository name
+NAME=$(gh api repos/$OWNER_REPO --jq '.name')
 
 # Get project language
 LANG=$(gh api repos/$OWNER_REPO --jq 'select(.language? != null) | .language')
 
-CURRENT_BRANCH=$(git branch --show-current)
-
 SKIP_VERSION=0
+
+# Search for files with these names in the project directory
+SEARCH=( "package.json", "*.csproj" )
 
 if [[ -z "$LANG" ]]; then
     echo "Brute force language detection" >&2
@@ -33,7 +31,19 @@ else
         SEARCH=( "*.csproj" )
     else
         echo "Unsupported project language: $LANG, release version will be unavailable" >&2
-	SKIP_VERSION=1
+	    SKIP_VERSION=1
+    fi
+fi
+
+CURRENT_BRANCH=$(git branch --show-current)
+
+if ! [[ "$CURRENT_BRANCH" == "release" ]]; then
+ 	echo "Not on release branch, checking out release branch" >&2
+    git checkout release > /dev/null 2>&1
+    CURRENT_BRANCH=$(git branch --show-current)
+    if ! [[ "$CURRENT_BRANCH" == "release" ]]; then
+        echo "Release branch does not exist, skipping version detection" >&2
+        SKIP_VERSION=1
     fi
 fi
 
@@ -59,50 +69,37 @@ fi
 # The list of tags on this repo
 TAGS=$(git tag | jq -ncR '[inputs]')
 
-# The list of release candidates, where semver minor is 0
-RC_LIST=$(git tag -l | grep -E '^[0-9]+\.[0-9]+\.0$' | jq -Rcn '[inputs]')
+# Release list
+RELEASES=$(gh api repos/$OWNER_REPO/releases --jq '.[].tag_name' | jq -Rnc '[inputs]')
 
-if [[ "$CURRENT_BRANCH" == "release" ]]; then
-    
-	if ! [[ -z "$RELEASE"  ]]; then
-	    # Get semver major of release version
-	    RELEASE_MAJOR=$(echo $RELEASE | grep -oP '^([0-9]+)')
+# The list of release candidates
+RC_LIST=$(git tag -l | grep -E '^(0|[1-9]\d*)\.([1-9]\d*)\.0$' | jq -Rcn '[inputs]')
 
-	    echo "Release version: $RELEASE" >&2
-	    echo "Semver major: $RELEASE_MAJOR" >&2
-	else
-	    echo "Can't parse release version" >&2
-	    # No release version found, null the variable
-	    RELEASE=null
-	fi
-else
-  	RELEASE=null
- 	echo "Not on release branch, skipping RC list" >&2
-fi
-
-# Get all the branches of this repo sin main and release
-#BRANCHES=$(git branch -r | grep -v "main" | grep -v "release")
+# List all the branches of this repo excluding main and release
 BRANCHES=$(git ls-remote --exit-code --heads origin | awk '{print $2}' | grep -oP '(?<=refs/heads/).*' | grep -v 'main' | grep -v 'release')
 
 # Get the last branch
-#LAST_BRANCH=$(echo $BRANCHES | grep -oP '(origin(?!.*origin.)).*')
 LAST_BRANCH=$(echo $BRANCHES | awk '{print $NF}')
 
 echo '{'
 echo '"name": "'$NAME'",'
-echo '"version": "'$RELEASE'",'
+if [ -z "$RELEASE" ]; then
+	echo '"version": null,'
+else
+	echo '"version": "'$RELEASE'",'
+fi
 echo '"updated": '$(date +%s%3N)','
 if [ -z "$WIKI_VERSION" ]; then
 	echo '"wikiVersion": null,'
 else
 	echo '"wikiVersion": "'$WIKI_VERSION'",'
 fi
+echo '"releases": '$RELEASES','
 echo '"releaseCandidates": '$RC_LIST','
 echo '"tags": '$TAGS','
 echo '"features": ['
 
 for BRANCH in $BRANCHES; do
-
     echo "Checking branch $BRANCH" >&2
 
 	# Checkout the branch, git output is silenced
@@ -118,9 +115,8 @@ for BRANCH in $BRANCHES; do
 	LAST_COMMIT_DATE=$(gh api repos/$OWNER_REPO/branches/$NAME --jq '.commit.commit.author.date')
 	LAST_COMMIT_AUTHOR=$(gh api repos/$OWNER_REPO/branches/$NAME --jq '.commit.commit.author.name')
 
-	#PR_STR="repos/$OWNER_REPO/pulls -f base=$NAME -f state=open"
-	PR_STR="repos/$OWNER_REPO/pulls -f state=open -f head=AMETEK-Dunker-IIoT:$NAME"
-	# Get the number of open pull requests in a list, if they exist
+	# Get the number of open pull requests in a list
+    PR_STR="repos/$OWNER_REPO/pulls -f state=open"
 
     echo "Reading pull requests..." >&2
 	PULL_REQUESTS=$(gh api -X GET $PR_STR --jq '.[].number')
@@ -142,10 +138,8 @@ for BRANCH in $BRANCHES; do
 			# When was the pull request created
 			PR_CREATED_AT=$(gh pr view $PR --json createdAt | jq -r '.createdAt')
 
-			#PR_INFO="$PR_INFO\"pr_number\": $PR, \"pr_title\": \"$PR_TITLE\", \"pr_author\": $PR_AUTHOR, \"created_at\": \"$PR_CREATED_AT\""
 			PR_INFO=$PR_INFO'"pr_number": '$PR', "pr_title": "'$PR_TITLE'", "pr_author": '$PR_AUTHOR', "created_at": "'$PR_CREATED_AT'"'
 		else
-			#PR_INFO="$PR_INFO\"pr_number\": null, \"pr_title\": null, \"pr_author\": null, \"created_at\": null"
 			PR_INFO=$PR_INFO'"pr_number": null, "pr_title": null, "pr_author": null, "created_at": null'
 		fi
 
@@ -165,17 +159,8 @@ for BRANCH in $BRANCHES; do
 	echo '"last_commit_message": "'$LAST_COMMIT_MESSAGE'",'
 	echo '"last_commit_date": "'$LAST_COMMIT_DATE'",'
 	echo '"last_commit_author": "'$LAST_COMMIT_AUTHOR'",'
-
-	if [[ "$LAST_SCAN_RESULT" != "" && "$LAST_SCANNED_BRANCH" != "" && "$NAME" == "$LAST_SCANNED_BRANCH" ]]; then
-		echo '"last_commit_scan_result": "'$LAST_SCAN_RESULT'",'
-		echo '"last_commit_scan_date": "'$(date +"%Y-%m-%dT%H:%M:%SZ" --date='-2 minutes')'",'
-	else
-		echo "Last scan result unavailable for branch $NAME." >&2
-	fi
-
 	echo '"pull_requests": '$PR_INFO
 
-	# Handle trailing comma
 	if [[ "$BRANCH" == "$LAST_BRANCH" ]]; then
 		echo '}'
 	else
