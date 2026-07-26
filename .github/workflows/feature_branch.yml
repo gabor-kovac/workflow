@@ -60,11 +60,6 @@ jobs:
           git commit -am "CI: bump C# version to ${{ steps.set_version.outputs.newVersion }}"
           git push
 
-  # Update_Status_Tracker:
-  #   needs: [Increase_Version_TypeScript]
-  #   uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
-  #   secrets: inherit
-
   Create_Artifact:
     needs: [Increase_Version_TypeScript, Increase_Version_CSharp]
     if: ((always() && needs.Increase_Version_TypeScript.result == 'success') || (always() && needs.Increase_Version_CSharp.result == 'success'))
@@ -115,3 +110,9 @@ jobs:
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUGET_SOURCE: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+  Update_Status_Tracker:
+    needs: [Create_Artifact]
+    if: always()
+    uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
+    secrets: inherit

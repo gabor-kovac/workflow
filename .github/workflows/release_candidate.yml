@@ -129,3 +129,9 @@ jobs:
           custom_tag: ${{ needs.Increase_Version_TypeScript.outputs.newVersion || needs.Increase_Version_CSharp.outputs.newVersion  }}
           tag_prefix: " "
           commit_sha: ${{ steps.headSha.outputs.HEAD_SHA }}
+
+  Update_Status_Tracker:
+    needs: [Create_Artifact]
+    if: always()
+    uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
+    secrets: inherit

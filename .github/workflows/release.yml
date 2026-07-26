@@ -179,3 +179,8 @@ jobs:
           file: sbom.spdx.json
           asset_name: sbom.spdx.json
 
+  Update_Status_Tracker:
+    needs: [Create_Artifact]
+    if: always()
+    uses: gabor-kovac/workflow/.github/workflows/create_and_commit_repo_info.yml@main
+    secrets: inherit
