@@ -61,7 +61,6 @@ jobs:
 
     # This will skip RC list and version
     - name: Checkout main branch
-      if: steps.check-branch-exists.outputs.exists == 'false'
       uses: actions/checkout@v7.0.1
       with:
         ref: 'main'
