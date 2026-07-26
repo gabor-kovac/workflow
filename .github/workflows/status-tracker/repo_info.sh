@@ -138,9 +138,9 @@ for BRANCH in $BRANCHES; do
 			# When was the pull request created
 			PR_CREATED_AT=$(gh pr view $PR --json createdAt | jq -r '.createdAt')
 
-			PR_INFO=$PR_INFO'"pr_number": '$PR', "pr_title": "'$PR_TITLE'", "pr_author": '$PR_AUTHOR', "created_at": "'$PR_CREATED_AT'"'
+			PR_INFO=$PR_INFO'"number": '$PR', "title": "'$PR_TITLE'", "author": '$PR_AUTHOR', "createdAt": "'$PR_CREATED_AT'"'
 		else
-			PR_INFO=$PR_INFO'"pr_number": null, "pr_title": null, "pr_author": null, "created_at": null'
+			PR_INFO=$PR_INFO'"number": null, "title": null, "author": null, "createdAt": null'
 		fi
 
 		# Handle trailing comma
@@ -155,11 +155,11 @@ for BRANCH in $BRANCHES; do
 
 	echo '{'
 	echo '"branch": "'$NAME'",'
-	echo '"last_commit_sha": "'$LAST_COMMIT_SHA'",'
-	echo '"last_commit_message": "'$LAST_COMMIT_MESSAGE'",'
-	echo '"last_commit_date": "'$LAST_COMMIT_DATE'",'
-	echo '"last_commit_author": "'$LAST_COMMIT_AUTHOR'",'
-	echo '"pull_requests": '$PR_INFO
+	echo '"lastCommitSha": "'$LAST_COMMIT_SHA'",'
+	echo '"lastCommitMessage": "'$LAST_COMMIT_MESSAGE'",'
+	echo '"lastCommitDate": "'$LAST_COMMIT_DATE'",'
+	echo '"lastCommitAuthor": "'$LAST_COMMIT_AUTHOR'",'
+	echo '"pullRequests": '$PR_INFO
 
 	if [[ "$BRANCH" == "$LAST_BRANCH" ]]; then
 		echo '}'
