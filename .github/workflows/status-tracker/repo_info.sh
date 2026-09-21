@@ -7,6 +7,9 @@ git fetch --all --tags > /dev/null 2>&1
 # Get owner/repo string
 OWNER_REPO=$(git config --get remote.origin.url | grep -oP '(?<=github\.com\/).*' | sed 's/\.git$//')
 
+# Get owner
+OWNER=$(echo $OWNER_REPO | cut -d'/' -f1)
+
 # Repository name
 NAME=$(gh api repos/$OWNER_REPO --jq '.name')
 
@@ -116,7 +119,7 @@ for BRANCH in $BRANCHES; do
 	LAST_COMMIT_AUTHOR=$(gh api repos/$OWNER_REPO/branches/$NAME --jq '.commit.commit.author.name')
 
 	# Get the number of open pull requests in a list
-    PR_STR="repos/$OWNER_REPO/pulls -f state=open"
+    PR_STR="repos/$OWNER_REPO/pulls -f state=open -f head=$OWNER:$NAME"
 
     echo "Reading pull requests..." >&2
 	PULL_REQUESTS=$(gh api -X GET $PR_STR --jq '.[].number')
