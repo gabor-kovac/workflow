@@ -1,8 +1,3 @@
-# ||||||||||||||||||||| NOTICE |||||||||||||||||||||||
-# || Update this file together with st_trigger.yml! ||
-# || Because of gollum trigger limitation, you need ||
-# || to update these two files together !!          ||
-# ||||||||||||||||||||||||||||||||||||||||||||||||||||
 name: Update status tracker repository with current repository info
 on:
   workflow_call:
